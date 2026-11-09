@@ -1,48 +1,39 @@
-# LEADFX Trading Platform
+# LEADFX — Static Trading Services Website
 
-Premium black-and-silver trading services storefront for South African and African customers.
+Responsive black-and-silver website for LEADFX, presenting trading-related services to visitors in South Africa and across Africa.
 
-## Included
-- Responsive service catalogue and multi-item cart
-- Server-calculated prices (browser-submitted prices are never trusted)
-- Yoco hosted Checkout API integration
-- Signed Yoco Checkout API webhook verification using Standard Webhooks
-- Supabase order storage with no public row-level-security policies
-- Resend owner and customer email notifications
-- Payment status polling after the customer returns from Yoco
-- Privacy and terms draft pages
-- Payments disabled by default
+## Hosting
+This project is a static website designed for Netlify. Connect this GitHub repository to Netlify:
+- Build command: leave blank
+- Publish directory: .
+- Functions directory: not required
 
-## Important launch controls
-**Do not accept live orders until the business has completed Yoco merchant/domain verification and obtained appropriate South African regulatory advice/authorisation for any regulated signals or financial services.** The site intentionally ships with `CHECKOUT_ENABLED=false`.
+The included `netlify.toml` sets the publish directory to the repository root.
 
-The catalogue is a proposed starting catalogue. Confirm product availability, prices, delivery, support terms and legal classification before enabling checkout. Yoco Checkout API processes ZAR and uses a hosted checkout page. The browser redirect is not proof of payment; only a verified Yoco webhook can mark an order paid.
+## Enquiries
+The contact form uses Netlify Forms. There is no payment gateway, checkout, customer account, database, or online payment collection. Visitors can review services and indicative prices, choose an area of interest, and submit an enquiry.
 
-## Deploy to Vercel
-1. Import this GitHub repository into Vercel.
-2. Add the environment variables listed in `.env.example` in Vercel Project Settings. Do not put secrets in frontend files.
-3. Create a Supabase project and run `supabase/schema.sql` in its SQL editor.
-4. Create a Resend account, verify a sending domain, and configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL`.
-5. Add your private inbox to `OWNER_NOTIFICATION_EMAIL` in Vercel only. It is not rendered on the public website or included in client-side files.
-6. In Yoco, open Sales → e-Commerce integrations → Checkout API. Add and verify the production domain. Use test keys while building.
-7. Register the Checkout API webhook URL `https://YOUR-DOMAIN/api/yoco-webhook` in Yoco and save the signing secret as `YOCO_WEBHOOK_SECRET`.
-8. Set `YOCO_EXPECTED_MODE=test`, configure `YOCO_SECRET_KEY` with the test secret, and keep `CHECKOUT_ENABLED=false` until database, webhook and email configuration is complete.
-9. For sandbox testing, set `CHECKOUT_ENABLED=true` and test end-to-end. Verify a paid test order, owner email, customer email, duplicate webhook behavior and failed payment handling.
-10. For launch, replace test credentials with live credentials, set `YOCO_EXPECTED_MODE=live`, verify the live webhook secret, and only then set `CHECKOUT_ENABLED=true` after compliance clearance.
+After the first successful deployment:
+1. Open the site in Netlify.
+2. Go to Forms and confirm that the `leadfx-enquiry` form has been detected (submit one test enquiry if needed).
+3. Open Forms → Form notifications (or Site configuration → Notifications, depending on the current Netlify UI).
+4. Add an email notification and enter the private inbox where you want enquiries delivered. Keep that address in Netlify settings; it is not shown on the public website.
+5. Submit a test enquiry and confirm the notification arrives.
 
-## Environment variables
-See `.env.example`. All variables are server-side. Never expose the Yoco secret key, webhook secret, Supabase service-role key, Resend API key or owner inbox address in browser JavaScript.
+## Services shown
+- Gold & Forex Signals — R199 / 30 days
+- All-Market Signals — R299 / 30 days
+- N_KEX EA Access — R349 / 30 days (early access / subject to validation)
+- EA Technology Suite — R599 / 30 days (planned / subject to release)
 
-## Current payment model
-Yoco Checkout API is used for one-time payments in ZAR. The displayed 30-day access packages require manual renewal; this implementation does not create automatic recurring charges.
+These are displayed as indicative prices. Confirm service availability, delivery, terms and final pricing directly with customers before accepting payment. No payment is taken on the website.
 
-## Before public launch
-- Replace draft legal pages with reviewed business terms, privacy notice, refund policy and required disclosures.
-- Confirm whether the proposed signal products and any software distribution require FSCA authorisation or other regulatory steps.
-- Confirm that each product is ready to deliver and test all supported brokers/instruments.
-- Configure support operations, access revocation/expiry and customer fulfilment.
-- Add abuse prevention/rate limiting and operational monitoring.
-- Verify Yoco's latest webhook documentation and perform test/live end-to-end checks.
+## Before launch
+- Confirm all prices, package inclusions and product readiness.
+- Replace draft Terms and Privacy pages with completed documents reviewed for South African legal and POPIA requirements.
+- Obtain professional regulatory advice before offering any activity that may require FSCA authorisation.
+- Configure Netlify form email notifications and test them.
+- Add your custom domain in Netlify and update DNS at your domain registrar.
 
-## Technical stack
-Static HTML/CSS/JS + Vercel Node serverless functions + Supabase + Yoco Checkout API + Resend.
+## Risk disclosure
+Trading forex, commodities and synthetic indices involves substantial risk and may not be suitable for everyone. No signals, software, or educational material can guarantee returns. This website does not provide a promise of profit.
