@@ -1,15 +1,13 @@
 const { Webhook } = require("standardwebhooks");
 const { db, json, escapeHtml, sendEmail } = require("./_lib");
 
-module.exports.config = { api: { bodyParser: false } };
-
 async function readRawBody(req) {
   const chunks = [];
   for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   return Buffer.concat(chunks).toString("utf8");
 }
 
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== "POST") return json(res, 405, { error: "Method not allowed." });
   if (!process.env.YOCO_WEBHOOK_SECRET) return json(res, 503, { error: "Webhook is not configured." });
 
@@ -61,22 +59,29 @@ module.exports = async function handler(req, res) {
 
     const { data: current, error: currentError } = await supabase.from("orders").select("*").eq("id", orderId).single();
     if (currentError) throw currentError;
-    const serviceLines = (current.services || []).map(item => "<li>" + escapeHtml(item.name) + " — R" + (item.price_cents / 100).toFixed(2) + "</li>").join("");
     const ownerEmail = process.env.OWNER_NOTIFICATION_EMAIL;
+    if (!ownerEmail) throw new Error("Private owner notification inbox is not configured.");
+
+    const serviceLines = (current.services || []).map(item => "<li>" + escapeHtml(item.name) + " — R" + (item.price_cents / 100).toFixed(2) + "</li>").join("");
     const customerHtml = "<div style='font-family:Arial,sans-serif;color:#17191e'><h2>Payment confirmed</h2><p>Hi " + escapeHtml(current.customer_name) + ",</p><p>We have verified your LEADFX payment. Your order is now marked as paid.</p><ul>" + serviceLines + "</ul><p><strong>Total: R" + (current.amount_cents / 100).toFixed(2) + "</strong></p><p>Order reference: " + escapeHtml(orderId) + "</p><p>We will follow up with service activation instructions.</p><p>LEADFX Support</p></div>";
     const ownerHtml = "<div style='font-family:Arial,sans-serif;color:#17191e'><h2>New paid LEADFX order</h2><p><strong>Order:</strong> " + escapeHtml(orderId) + "</p><p><strong>Customer:</strong> " + escapeHtml(current.customer_name) + "</p><p><strong>Customer email:</strong> " + escapeHtml(current.customer_email) + "</p><ul>" + serviceLines + "</ul><p><strong>Total paid:</strong> R" + (current.amount_cents / 100).toFixed(2) + "</p><p><strong>Yoco payment ID:</strong> " + escapeHtml(payment.id || "Not supplied") + "</p></div>";
 
-    if (ownerEmail && !current.owner_notified_at) {
+    if (!current.owner_notified_at) {
       await sendEmail({ to: ownerEmail, subject: "LEADFX — New paid order " + orderId.slice(0, 8), html: ownerHtml });
-      await supabase.from("orders").update({ owner_notified_at: new Date().toISOString() }).eq("id", orderId);
+      const { error } = await supabase.from("orders").update({ owner_notified_at: new Date().toISOString() }).eq("id", orderId);
+      if (error) throw error;
     }
     if (!current.customer_notified_at) {
       await sendEmail({ to: current.customer_email, subject: "LEADFX — Payment confirmed", html: customerHtml });
-      await supabase.from("orders").update({ customer_notified_at: new Date().toISOString() }).eq("id", orderId);
+      const { error } = await supabase.from("orders").update({ customer_notified_at: new Date().toISOString() }).eq("id", orderId);
+      if (error) throw error;
     }
     return json(res, 200, { received: true });
   } catch (error) {
     console.error("Yoco webhook verification/processing error:", error.message);
     return json(res, 400, { error: "Webhook could not be verified or processed." });
   }
-};
+}
+
+module.exports = handler;
+module.exports.config = { api: { bodyParser: false } };
