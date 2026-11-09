@@ -5,6 +5,7 @@ const CATALOG = {
   "ea-suite": { name: "EA Technology Suite", price: 599 }
 };
 const cart = new Set();
+let checkoutAvailable = false;
 const money = value => new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" }).format(value);
 const cartItems = document.getElementById("cartItems");
 const cartTotal = document.getElementById("cartTotal");
@@ -49,7 +50,8 @@ function renderCart() {
     }
   }
   cartTotal.textContent = money(total);
-  payButton.disabled = cart.size === 0;
+  payButton.disabled = cart.size === 0 || !checkoutAvailable;
+  payButton.textContent = checkoutAvailable ? "Continue to secure payment ↗" : "Checkout opening soon";
   document.querySelectorAll("[data-add]").forEach(button => {
     const active = cart.has(button.dataset.add);
     button.classList.toggle("selected", active);
@@ -129,3 +131,7 @@ async function pollOrder(orderId) {
   notify("Payment verification is still processing. Please check your email before trying again.");
 }
 renderCart();
+fetch("/api/config", { cache: "no-store" }).then(response => response.ok ? response.json() : null).then(data => {
+  checkoutAvailable = Boolean(data && data.checkoutEnabled);
+  renderCart();
+}).catch(() => { checkoutAvailable = false; renderCart(); });
